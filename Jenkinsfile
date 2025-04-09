@@ -5,10 +5,6 @@ pipeline {
         maven 'Maven3' // This must match the name in Global Tool Configuratio
     }
 
-    environment {
-        // Define environment variables here if needed in future
-    }
-
     triggers {
         githubPush() // Triggers build when a GitHub push event occurs (webhook)
     }
