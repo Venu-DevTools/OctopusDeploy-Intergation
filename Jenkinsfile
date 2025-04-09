@@ -10,7 +10,7 @@ pipeline {
     }
 
     triggers {
-        githubPush() // Auto-trigger on GitHub push (make sure webhook is configured)
+        githubPush() // Auto-trigger on GitHub push (make sure webhook is configured) 
     }
 
     stages {
@@ -18,7 +18,7 @@ pipeline {
             steps {
                 git credentialsId: 'github-creds',
                     url: 'https://github.com/Venu-DevTools/OctopusDeploy-Intergation.git',
-                    branch: 'main'
+                    branch: 'main' 
             }
         }
 
