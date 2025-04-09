@@ -2,31 +2,50 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven3' // This must match the name in Global Tool Configuratio
+        maven 'Maven3' // Match this name with what's configured in Jenkins -> Global Tool Configuration
+    }
+
+    environment {
+        OCTOPUS_API_KEY = credentials('octopus-api-key') // Inject Octopus API Key from Jenkins credentials
     }
 
     triggers {
-        githubPush() // Triggers build when a GitHub push event occurs (webhook)
+        githubPush() // Auto-trigger on GitHub push (make sure webhook is configured)
     }
 
     stages {
         stage('Clone from GitHub') {
             steps {
-                git credentialsId: 'github-creds', 
-                    url: 'https://github.com/Venu-DevTools/OctopusDeploy-Intergation.git', 
+                git credentialsId: 'github-creds',
+                    url: 'https://github.com/Venu-DevTools/OctopusDeploy-Intergation.git',
                     branch: 'main'
             }
         }
 
         stage('Build Project') {
             steps {
-                sh 'mvn clean package'
+                // This customizes the JAR name to match Octopus version
+                sh "mvn clean package -Djar.finalName=hello-world-1.0.${BUILD_NUMBER}"
             }
         }
 
         stage('Archive JAR') {
             steps {
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                archiveArtifacts artifacts: "target/hello-world-1.0.${BUILD_NUMBER}.jar", fingerprint: true
+            }
+        }
+
+        stage('Push to Octopus') {
+            steps {
+                sh """
+                octo push \
+                    --package target/hello-world-1.0.${BUILD_NUMBER}.jar \
+                    --server https://devtools.octopus.app/ \
+                    --apiKey ${OCTOPUS_API_KEY} \
+                    --space "firefist" \
+                    --project "helloworld" \
+                    --version 1.0.${BUILD_NUMBER}
+                """
             }
         }
     }
