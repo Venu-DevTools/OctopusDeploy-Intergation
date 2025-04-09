@@ -2,15 +2,20 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven3' // Match this name with what's configured in Jenkins -> Global Tool Configuration
+        maven 'Maven3' // Match with Jenkins tool config
     }
 
     environment {
-        OCTOPUS_API_KEY = credentials('octopus-api-key') // Inject Octopus API Key from Jenkins credentials
+        OCTOPUS_API_KEY = credentials('octopus-api-key') // From Jenkins credentials
+        OCTOPUS_PROJECT = 'helloworld'
+        OCTOPUS_SPACE = 'firefist'
+        OCTOPUS_ENVIRONMENT = 'development' // Change if you want to deploy to another environment
+        OCTOPUS_SERVER = 'https://devtools.octopus.app/'
+        PACKAGE_VERSION = "1.0.${BUILD_NUMBER}" // Version tied to the build number
     }
 
     triggers {
-        githubPush() // Auto-trigger on GitHub push (make sure webhook is configured) 
+        githubPush()
     }
 
     stages {
@@ -18,20 +23,19 @@ pipeline {
             steps {
                 git credentialsId: 'github-creds',
                     url: 'https://github.com/Venu-DevTools/OctopusDeploy-Intergation.git',
-                    branch: 'main' 
+                    branch: 'main'
             }
         }
 
         stage('Build Project') {
             steps {
-                // This customizes the JAR name to match Octopus version
-                sh "mvn clean package -Djar.finalName=hello-world-1.0.${BUILD_NUMBER}"
+                sh "mvn clean package -Djar.finalName=hello-world-${PACKAGE_VERSION}"
             }
         }
 
         stage('Archive JAR') {
             steps {
-                archiveArtifacts artifacts: "target/hello-world-1.0.${BUILD_NUMBER}.jar", fingerprint: true
+                archiveArtifacts artifacts: "target/hello-world-${PACKAGE_VERSION}.jar", fingerprint: true
             }
         }
 
@@ -40,10 +44,43 @@ pipeline {
                 withEnv(["OCTO_API_KEY=${OCTOPUS_API_KEY}"]) {
                     sh '''
                         octo push \
-                        --package target/hello-world-1.0.${BUILD_NUMBER}.jar \
-                        --server https://devtools.octopus.app/ \
+                        --package target/hello-world-${PACKAGE_VERSION}.jar \
+                        --server ${OCTOPUS_SERVER} \
                         --apiKey ${OCTO_API_KEY} \
-                        --space "firefist"
+                        --space "${OCTOPUS_SPACE}"
+                    '''
+                }
+            }
+        }
+
+        stage('Create Release') {
+            steps {
+                withEnv(["OCTO_API_KEY=${OCTOPUS_API_KEY}"]) {
+                    sh '''
+                        octo create-release \
+                        --project "${OCTOPUS_PROJECT}" \
+                        --version ${PACKAGE_VERSION} \
+                        --server ${OCTOPUS_SERVER} \
+                        --apiKey ${OCTO_API_KEY} \
+                        --space "${OCTOPUS_SPACE}" \
+                        --packageVersion ${PACKAGE_VERSION}
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy Release') {
+            steps {
+                withEnv(["OCTO_API_KEY=${OCTOPUS_API_KEY}"]) {
+                    sh '''
+                        octo deploy-release \
+                        --project "${OCTOPUS_PROJECT}" \
+                        --version ${PACKAGE_VERSION} \
+                        --server ${OCTOPUS_SERVER} \
+                        --apiKey ${OCTO_API_KEY} \
+                        --space "${OCTOPUS_SPACE}" \
+                        --deployTo "${OCTOPUS_ENVIRONMENT}" \
+                        --progress
                     '''
                 }
             }
