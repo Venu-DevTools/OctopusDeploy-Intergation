@@ -55,9 +55,7 @@ pipeline {
                         --server ${OCTOPUS_SERVER} \
                         --apiKey ${OCTO_API_KEY} \
                         --space "${OCTOPUS_SPACE}" \
-                        --packageId hello-world \
-                        --version ${PACKAGE_VERSION}
-                    '''
+                     '''
                 }
             }
         }
