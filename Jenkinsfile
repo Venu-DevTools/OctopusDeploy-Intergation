@@ -3,7 +3,7 @@ pipeline {
 
     tools {
         maven 'Maven3' // Ensure Maven3 is configured in Jenkins Global Tool Configuration
-    }
+    } 
 
     environment {
         OCTOPUS_API_KEY = credentials('octopus-api-key') // Securely pulls Octopus API key from Jenkins credentials
