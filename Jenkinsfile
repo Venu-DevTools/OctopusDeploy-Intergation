@@ -37,15 +37,15 @@ pipeline {
 
         stage('Push to Octopus') {
             steps {
-                sh """
-                octo push \
-                    --package target/hello-world-1.0.${BUILD_NUMBER}.jar \
-                    --server https://devtools.octopus.app/ \
-                    --apiKey ${OCTOPUS_API_KEY} \
-                    --space "firefist" \
-                    --project "helloworld" \
-                    --version 1.0.${BUILD_NUMBER}
-                """
+                withEnv(["OCTO_API_KEY=${OCTOPUS_API_KEY}"]) {
+                    sh '''
+                        octo push \
+                        --package target/hello-world-1.0.${BUILD_NUMBER}.jar \
+                        --server https://devtools.octopus.app/ \
+                        --apiKey ${OCTO_API_KEY} \
+                        --space "firefist"
+                    '''
+                }
             }
         }
     }
