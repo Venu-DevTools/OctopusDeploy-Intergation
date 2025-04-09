@@ -9,6 +9,8 @@
     <version>1.0.0</version>
 
     <build>
+
+        <finalName>${jar.finalName}</finalName>
         <sourceDirectory>src/main/java</sourceDirectory>
         <plugins>
             <!-- Compiler Plugin -->
